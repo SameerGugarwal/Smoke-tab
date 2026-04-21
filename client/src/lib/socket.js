@@ -1,12 +1,14 @@
 import { io } from 'socket.io-client';
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || '/';
+
 let socket = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io('/', {
+    socket = io(BACKEND_URL, {
       auth: { token: localStorage.getItem('smoketab_token') },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: false,
     });
   }

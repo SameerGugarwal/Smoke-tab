@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || '';
+
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
+  baseURL: `${BACKEND_URL}/api`,
+  timeout: 15000,
 });
 
 // Attach auth token to every request
