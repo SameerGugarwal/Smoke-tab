@@ -1,0 +1,70 @@
+Here is the updated, comprehensive Product Requirements Document (PRD) and revised project plan, incorporating all the new features to make SmokeTab a robust and highly useful tool. 
+
+---
+
+## 📄 Product Requirements Document (PRD) - v2.0
+**Project Name:** SmokeTab (Working Title)
+**Platform:** Responsive Web Application (Progressive Web App - PWA)
+**Target Audience:** Small shop vendors (Tapris/Paan shops) and their regular customers.
+
+### 1. Objective
+To provide a seamless, digital "buy now, pay later" tab system that connects vendors and buyers, tracks consumption, enforces user-set limits, and simplifies due collection via UPI and automated WhatsApp reminders.
+
+### 2. User Roles
+* **Vendor (Shop Owner):** Has admin control over transactions, can manage inventory quick-adds, view analytics, and collect payments.
+* **Buyer (Customer):** Can view their tab, track daily consumption, set health/budget limits, and initiate full or partial payments.
+
+### 3. Core Features & App Flow
+
+#### A. Onboarding & Connection
+* **OTP Authentication:** Fast login via Phone Number and OTP.
+* **QR Code Linking:** Buyer scans the Vendor's unique in-app QR code (or vice versa) to establish a trusted "Tab" connection.
+
+#### B. Vendor Dashboard & Point of Sale (POS)
+* **Inventory Quick-Add Grid:** A customizable grid of buttons for high-frequency items (e.g., "Classic Milds", "Marlboro", "Chai", "Gum") so the vendor can add items to a tab with a single tap rather than typing.
+* **Ledger Management:** Vendor selects a linked customer, taps the item, and it is added to their due balance. Vendors can delete/edit mistaken entries.
+* **Vendor Analytics:** A dedicated screen showing:
+    * *Total Market Exposure:* The total amount of money currently owed by all customers combined.
+    * *Top Debtors:* A sorted list of the top 5-10 customers with the highest outstanding dues.
+
+#### C. Buyer Dashboard & Tracking
+* **Real-Time Tab Sync:** Purchases appear instantly on the buyer's screen.
+* **Consumption Tracker:** Visual graphs showing daily, weekly, and monthly cigarette consumption and total expenditure.
+* **"Set a Limit" (Budget/Health Tool):** * Buyer can configure a maximum daily limit (e.g., "Max 3 cigarettes/day" or "Max ₹100/day").
+    * *Trigger:* If the vendor attempts to add an item that breaches this limit, the app alerts the vendor: *"User has reached their daily limit! Add anyway?"* (Vendor can override if the customer insists, but the friction is there).
+
+#### D. Payments & Due Collection
+* **UPI Integration:** "Pay Dues" button on the buyer's screen. On mobile, this opens installed UPI apps via deep linking. On desktop, it displays the Vendor's static UPI QR.
+* **Partial Payments:** Buyers can choose to clear the entire due or enter a custom amount to partially pay down their tab.
+* **Automated WhatsApp Reminders:** Backend integration (using an API like Twilio or WhatsApp Business API) to send automated, polite weekly summaries to buyers: *"Hi! Your current tab at [Shop Name] is ₹450. Click here to pay: [Link]"*.
+
+#### E. UI/UX Guidelines
+* **Mobile-First & PWA:** Designed for smartphone screens. Can be "Installed" directly from the browser to the home screen without an app store.
+* **High Contrast & Icon-Heavy:** Designed for outdoor visibility (sunlight) and quick navigation without reading small text.
+
+---
+
+## 🗓️ Updated Project Plan (9-Week Timeline)
+
+Adding analytics, partial payments, and WhatsApp APIs increases the scope. Here is the adjusted timeline.
+
+### Phase 1: Planning & Design (Weeks 1 - 2)
+* **Week 1:** Wireframe the Vendor and Buyer flows. Design the Quick-Add grid and Analytics dashboard. 
+* **Week 2:** Setup database architecture (Firebase/Supabase). Map out the schemas for Users, Shops, Transactions, and Limits.
+
+### Phase 2: Core Engine Development (Weeks 3 - 5)
+* **Week 3:** Implement OTP Authentication and QR Code generation/scanning. 
+* **Week 4:** Build the Vendor POS. Implement the Quick-Add grid and the core transaction ledger (adding/removing items from a specific user's tab).
+* **Week 5:** Build the Buyer Dashboard. Implement the real-time sync and the Consumption Tracker visuals.
+
+### Phase 3: Advanced Features & Payments (Weeks 6 - 7)
+* **Week 6 (Limits & Payments):** Build the "Set a Limit" logic and warning system. Integrate UPI deep linking for both full and partial payments.
+* **Week 7 (Analytics & WhatsApp):** Build the Vendor Analytics screen. Integrate the WhatsApp API to trigger automated weekly messages based on outstanding balances.
+
+### Phase 4: Beta Testing (Week 8)
+* **The "One Tapri" Test:** Deploy the PWA. Onboard one local vendor and 5-10 of their regular customers.
+* **Monitor & Fix:** Watch for edge cases (e.g., what happens if a partial payment is made right as a new item is added?). Fix UI bugs.
+
+### Phase 5: Launch & Vendor Acquisition (Week 9)
+* Push final updates to production.
+* Begin marketing directly to shop owners, emphasizing how the app will automatically chase down their dues via WhatsApp so they don't have to have awkward conversations.
