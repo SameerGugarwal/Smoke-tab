@@ -18,6 +18,24 @@ function createToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
+// ── Twilio WhatsApp setup ──
+let twilioClient = null;
+const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_WA_FROM = process.env.TWILIO_WHATSAPP_FROM;
+
+if (TWILIO_SID && TWILIO_TOKEN && TWILIO_WA_FROM) {
+  try {
+    const twilio = require('twilio');
+    twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN);
+    console.log('✅ Twilio WhatsApp OTP enabled');
+  } catch (err) {
+    console.warn('⚠️  Twilio SDK not installed — OTPs will be logged to console');
+  }
+} else {
+  console.warn('⚠️  Twilio credentials missing — OTPs will be logged to console');
+}
+
 // POST /api/auth/send-otp
 // Body: { phone: "9876543210" }
 const sendOtp = async (req, res) => {
@@ -30,9 +48,24 @@ const sendOtp = async (req, res) => {
     const otp = generateOtp();
     otpStore.set(phone, { otp, expiresAt: Date.now() + OTP_EXPIRY_MS });
 
-    // TODO: Send OTP via SMS (Twilio / MSG91 / etc.)
-    // For now, log to console so you can see it during development
-    console.log(`\n📱 OTP for +91${phone}: ${otp}\n`);
+    // Try to send via Twilio WhatsApp
+    if (twilioClient) {
+      try {
+        await twilioClient.messages.create({
+          body: `Your SmokeTab OTP is: *${otp}*\nValid for 5 minutes.\nDo not share this code.`,
+          from: `whatsapp:${TWILIO_WA_FROM}`,
+          to: `whatsapp:+91${phone}`,
+        });
+        console.log(`📱 OTP sent via WhatsApp to +91${phone}`);
+      } catch (waErr) {
+        // If WhatsApp fails, log to console as fallback
+        console.error('WhatsApp send failed:', waErr.message);
+        console.log(`\n📱 OTP for +91${phone}: ${otp} (fallback — WhatsApp failed)\n`);
+      }
+    } else {
+      // No Twilio configured — dev mode, log to console
+      console.log(`\n📱 OTP for +91${phone}: ${otp}\n`);
+    }
 
     res.json({ success: true, message: 'OTP sent successfully' });
   } catch (err) {
