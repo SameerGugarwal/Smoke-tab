@@ -79,7 +79,7 @@ export default function TabDetail() {
               {formatAmount(tab?.balanceDue)}
             </div>
           </div>
-          {tab?.balanceDue > 0 && (
+          {tab?.balanceDue > 0 && shop?.upiId && (
             <button
               className="btn btn-primary"
               onClick={() => setShowPayment(true)}

@@ -13,6 +13,7 @@ import CustomerTab from './pages/vendor/CustomerTab';
 import InventoryManager from './pages/vendor/InventoryManager';
 import VendorAnalytics from './pages/vendor/VendorAnalytics';
 import VendorQR from './pages/vendor/VendorQR';
+import VendorUPI from './pages/vendor/VendorUPI';
 
 // Buyer
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/vendor/inventory" element={<ProtectedRoute role="vendor"><Layout><InventoryManager /></Layout></ProtectedRoute>} />
           <Route path="/vendor/analytics" element={<ProtectedRoute role="vendor"><Layout><VendorAnalytics /></Layout></ProtectedRoute>} />
           <Route path="/vendor/qr" element={<ProtectedRoute role="vendor"><Layout><VendorQR /></Layout></ProtectedRoute>} />
+          <Route path="/vendor/upi" element={<ProtectedRoute role="vendor"><Layout><VendorUPI /></Layout></ProtectedRoute>} />
 
           {/* Buyer */}
           <Route path="/buyer" element={<ProtectedRoute role="buyer"><Layout><BuyerDashboard /></Layout></ProtectedRoute>} />

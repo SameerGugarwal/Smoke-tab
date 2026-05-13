@@ -6,6 +6,7 @@ const vendorLinks = [
   { to: '/vendor/analytics', icon: '📊', label: 'Analytics' },
   { to: '/vendor/inventory', icon: '📦', label: 'Inventory' },
   { to: '/vendor/qr', icon: '📱', label: 'My QR' },
+  { to: '/vendor/upi', icon: '🏦', label: 'UPI' },
 ];
 
 const buyerLinks = [
