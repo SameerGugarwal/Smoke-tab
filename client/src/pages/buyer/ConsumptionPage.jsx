@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BarChart2 } from 'lucide-react';
 import api from '../../lib/api';
 import { formatAmount } from '../../lib/helpers';
 import { SpendChart, CountChart } from '../../components/ConsumptionChart';
@@ -91,8 +92,10 @@ export default function ConsumptionPage() {
 
       {(!stats?.weekly?.length) && (
         <div className="empty-state">
-          <span className="empty-icon">📊</span>
-          <p>No data yet. Start a tab to see your trends.</p>
+          <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <BarChart2 size={48} />
+          </div>
+          <p>No data available for the last 7 days</p>
         </div>
       )}
     </div>

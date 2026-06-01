@@ -14,12 +14,14 @@ import InventoryManager from './pages/vendor/InventoryManager';
 import VendorAnalytics from './pages/vendor/VendorAnalytics';
 import VendorQR from './pages/vendor/VendorQR';
 import VendorUPI from './pages/vendor/VendorUPI';
+import VendorPayments from './pages/vendor/VendorPayments';
 
 // Buyer
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import TabDetail from './pages/buyer/TabDetail';
 import ConsumptionPage from './pages/buyer/ConsumptionPage';
 import LimitsPage from './pages/buyer/LimitsPage';
+import BuyerPayments from './pages/buyer/BuyerPayments';
 
 // Common
 import ScanPage from './pages/common/ScanPage';
@@ -47,12 +49,14 @@ export default function App() {
           <Route path="/vendor/analytics" element={<ProtectedRoute role="vendor"><Layout><VendorAnalytics /></Layout></ProtectedRoute>} />
           <Route path="/vendor/qr" element={<ProtectedRoute role="vendor"><Layout><VendorQR /></Layout></ProtectedRoute>} />
           <Route path="/vendor/upi" element={<ProtectedRoute role="vendor"><Layout><VendorUPI /></Layout></ProtectedRoute>} />
+          <Route path="/vendor/payments" element={<ProtectedRoute role="vendor"><Layout><VendorPayments /></Layout></ProtectedRoute>} />
 
           {/* Buyer */}
           <Route path="/buyer" element={<ProtectedRoute role="buyer"><Layout><BuyerDashboard /></Layout></ProtectedRoute>} />
           <Route path="/buyer/tab/:tabId" element={<ProtectedRoute role="buyer"><Layout><TabDetail /></Layout></ProtectedRoute>} />
           <Route path="/buyer/consumption" element={<ProtectedRoute role="buyer"><Layout><ConsumptionPage /></Layout></ProtectedRoute>} />
           <Route path="/buyer/limits" element={<ProtectedRoute role="buyer"><Layout><LimitsPage /></Layout></ProtectedRoute>} />
+          <Route path="/buyer/payments" element={<ProtectedRoute role="buyer"><Layout><BuyerPayments /></Layout></ProtectedRoute>} />
 
           {/* Common */}
           <Route path="/scan" element={<ProtectedRoute><Layout><ScanPage /></Layout></ProtectedRoute>} />

@@ -5,6 +5,8 @@ const ctrl = require('../controllers/paymentController');
 
 router.post('/', auth, ctrl.recordPayment);
 router.put('/:paymentId/confirm', auth, ctrl.confirmPayment);
+router.get('/vendor', auth, ctrl.getVendorPayments);
+router.get('/buyer', auth, ctrl.getBuyerPayments);
 router.get('/tab/:tabId', auth, ctrl.getTabPayments);
 
 module.exports = router;

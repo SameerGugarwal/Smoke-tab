@@ -22,6 +22,7 @@ export default function TabDetail() {
     const s = connectSocket();
     s.emit('join:tab', { tabId });
     return () => s.emit('leave:tab', { tabId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);
 
   useSocket('tab:item-added', ({ tx, tab: updatedTab }) => {

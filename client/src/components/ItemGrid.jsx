@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatAmount } from '../lib/helpers';
+import LucideIcon from './LucideIcon';
 
 const BRAND_FILTERS = [
   { key: 'all', label: 'All' },
@@ -29,7 +30,7 @@ export default function ItemGrid({ items, onSelect, loading }) {
   if (!items?.length) {
     return (
       <div className="empty-state">
-        <span className="empty-icon">📦</span>
+        <div className="empty-icon"><LucideIcon nameOrEmoji="📦" size={48} /></div>
         <p>No inventory items yet</p>
       </div>
     );
@@ -82,7 +83,9 @@ export default function ItemGrid({ items, onSelect, loading }) {
             className="item-btn"
             onClick={() => onSelect(item)}
           >
-            <span className="icon">{item.icon || '🚬'}</span>
+            <div className="icon" style={{ display: 'flex', justifyContent: 'center' }}>
+              <LucideIcon nameOrEmoji={item.icon || '🚬'} size={32} />
+            </div>
             <span className="name">{item.name}</span>
             <span className="price">{formatAmount(item.price)}</span>
           </button>

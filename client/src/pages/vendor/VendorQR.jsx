@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
+import { AlertTriangle } from 'lucide-react';
 import QRCodeDisplay from '../../components/QRCodeDisplay';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -34,9 +35,11 @@ export default function VendorQR() {
           </>
         ) : (
           <div className="empty-state">
-            <span className="empty-icon">⚠️</span>
-            <p>Set up your shop first</p>
+          <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <AlertTriangle size={48} />
           </div>
+          <p>Please log in from your mobile device<br/>to generate your QR code</p>
+        </div>
         )}
       </div>
     </div>

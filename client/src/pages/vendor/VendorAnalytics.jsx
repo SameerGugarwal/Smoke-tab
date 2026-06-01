@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PartyPopper } from 'lucide-react';
 import api from '../../lib/api';
 import { formatAmount, getInitials } from '../../lib/helpers';
 import { SpendChart } from '../../components/ConsumptionChart';
@@ -64,8 +65,10 @@ export default function VendorAnalytics() {
         <div className="section-title">Top Debtors</div>
         {debtors.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">🎉</span>
-            <p>No outstanding dues!</p>
+            <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              <PartyPopper size={48} color="var(--color-primary)" />
+            </div>
+            <p>All dues are clear!<br/>Wait for customers to make purchases.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

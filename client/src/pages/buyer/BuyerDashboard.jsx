@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import { formatAmount } from '../../lib/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { Camera } from 'lucide-react';
 import useSocket from '../../hooks/useSocket';
 import { connectSocket } from '../../lib/socket';
 
@@ -12,12 +13,15 @@ export default function BuyerDashboard() {
   const navigate = useNavigate();
   const [tabs, setTabs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showUpiEdit, setShowUpiEdit] = useState(false);
+  const [newUpi, setNewUpi] = useState(user?.upiId || '');
+  const [savingUpi, setSavingUpi] = useState(false);
 
   useEffect(() => {
     loadTabs();
     const s = connectSocket();
     s.emit('join:user', { userId: user?._id });
-  }, []);
+  }, [user?._id]);
 
   useSocket('tab:item-added', ({ tab }) => {
     setTabs((prev) => prev.map((t) => t._id === tab._id ? { ...t, balanceDue: tab.balanceDue } : t));
@@ -36,6 +40,23 @@ export default function BuyerDashboard() {
     }
   };
 
+  const handleUpdateUpi = async () => {
+    if (!newUpi.trim()) return;
+    setSavingUpi(true);
+    try {
+      await api.put('/auth/upi', { upiId: newUpi.trim() });
+      setShowUpiEdit(false);
+      // Optional: show a toast, but alert is fine for now
+      alert('UPI ID updated successfully!');
+      // Force reload to update context if needed, or rely on next session
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to update');
+    } finally {
+      setSavingUpi(false);
+    }
+  };
+
   const totalDue = tabs.reduce((s, t) => s + (t.balanceDue || 0), 0);
 
   if (loading) return <LoadingSpinner fullPage />;
@@ -48,8 +69,30 @@ export default function BuyerDashboard() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Hi,</div>
           <h2>{user?.name}</h2>
         </div>
-        <button onClick={signOut} className="btn btn-ghost btn-sm">Sign out</button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button onClick={() => { setShowUpiEdit(!showUpiEdit); setNewUpi(user?.upiId || ''); }} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>UPI ID</button>
+          <button onClick={signOut} className="btn btn-ghost btn-sm" style={{ padding: '4px 8px' }}>Sign out</button>
+        </div>
       </div>
+
+      {/* Edit UPI Panel */}
+      {showUpiEdit && (
+        <div className="card" style={{ marginBottom: '1rem', border: '1px solid var(--color-primary)', animation: 'fadeIn 0.2s ease' }}>
+           <h4 style={{ marginBottom: '0.5rem', fontSize: '0.9rem' }}>Update UPI ID</h4>
+           <div style={{ display: 'flex', gap: '0.5rem' }}>
+             <input 
+               className="input" 
+               style={{ padding: '0.4rem 0.75rem', fontSize: '0.9rem' }}
+               value={newUpi} 
+               onChange={e => setNewUpi(e.target.value.toLowerCase())} 
+               placeholder="e.g. name@bank" 
+             />
+             <button className="btn btn-primary btn-sm" onClick={handleUpdateUpi} disabled={savingUpi || !newUpi}>
+               {savingUpi ? '...' : 'Save'}
+             </button>
+           </div>
+        </div>
+      )}
 
       {/* Total due */}
       <div className="card" style={{
@@ -69,8 +112,10 @@ export default function BuyerDashboard() {
         <div className="section-title">Your Tabs</div>
         {tabs.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📷</span>
-            <p>No active tabs. Scan a shop's QR code to get started.</p>
+            <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Camera size={48} />
+            </div>
+            <p>No active shop tabs.<br/>Scan a tapri's QR to open a tab!</p>
             <button className="btn btn-primary btn-sm" style={{ marginTop: '0.75rem' }} onClick={() => navigate('/scan')}>
               Scan QR Code
             </button>

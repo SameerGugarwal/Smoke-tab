@@ -2,21 +2,20 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatAmount, buildUpiLink, isMobile } from '../lib/helpers';
 import api from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
+  const { user } = useAuth();
   const [amount, setAmount] = useState(tab?.balanceDue || 0);
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [showUpiError, setShowUpiError] = useState(false);
 
   const amountRupees = (amount / 100).toFixed(2);
   const upiLink = shop?.upiId ? buildUpiLink(shop.upiId, amount, shop.name) : null;
   const mobile = isMobile();
 
-  const handlePay = async () => {
-    if (mobile && upiLink) {
-      window.location.href = upiLink;
-    }
-    // Record payment as pending
+  const recordPending = async () => {
     setLoading(true);
     try {
       await api.post('/payments', { tabId: tab._id, amount, method: 'upi' });
@@ -24,9 +23,47 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
       setTimeout(() => { onClose(); onConfirmed?.(); }, 2000);
     } catch (err) {
       console.error(err);
-    } finally {
       setLoading(false);
     }
+  };
+
+  const handlePay = async () => {
+    if (!user?.upiId) {
+      alert("Missing UPI ID! Please update your profile.");
+      return;
+    }
+
+    if (!mobile || !upiLink) {
+      // Desktop or no vendor upi -> just record pending
+      recordPending();
+      return;
+    }
+
+    // Trigger Deep Link with Fallback
+    let intentFired = false;
+    const timeout = setTimeout(() => {
+      if (!intentFired) {
+        setShowUpiError(true);
+      }
+    }, 2000);
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        intentFired = true;
+        clearTimeout(timeout);
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange, { once: true });
+    
+    const a = document.createElement('a');
+    a.href = upiLink;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    recordPending();
   };
 
   return (
@@ -81,6 +118,17 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
             {!shop?.upiId && (
               <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-warning)' }}>
                 <p style={{ color: 'var(--color-warning)', fontSize: '0.85rem' }}>⚠️ Vendor hasn't set up UPI yet. Pay cash and ask them to confirm.</p>
+              </div>
+            )}
+
+            {showUpiError && (
+              <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-danger)' }}>
+                <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }}>Could not launch a UPI app. Please scan the QR code instead.</p>
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                  <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
+                    <QRCodeSVG value={upiLink} size={150} />
+                  </div>
+                </div>
               </div>
             )}
 

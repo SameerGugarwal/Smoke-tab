@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { sendOtp, verifyOtp, register, getMe } = require('../controllers/authController');
+const { login, register, getMe, updateUpi } = require('../controllers/authController');
 
 // Public routes (no auth required)
-router.post('/send-otp', sendOtp);
-router.post('/verify-otp', verifyOtp);
-router.post('/register', register); // Uses registration token from verify-otp
+router.post('/login', login);
+router.post('/register', register); 
 
 // Protected routes
 router.get('/me', auth, getMe);
+router.put('/upi', auth, updateUpi);
 
 module.exports = router;

@@ -422,6 +422,128 @@ money_app/
 
 ---
 
+## Feature Plan: Camera QR Scanner
+
+### Goal Description
+Implement an in-app camera scanner on the `ScanPage` allowing buyers to directly scan a vendor's QR code without leaving the app. This creates a seamless "connect to vendor" experience.
+
+### Proposed Changes
+
+#### [NEW] client/src/components/QRCodeScanner.jsx
+- Create a React wrapper around the `html5-qrcode` library.
+- It will render a `<div id="qr-reader"></div>`.
+- On mount, it initializes `Html5QrcodeScanner` to request camera permissions and start scanning.
+- On successful scan, it extracts the `token` from the scanned URL (which looks like `https://domain/scan?token=abc`) and calls an `onScan(token)` prop.
+- On unmount, it properly cleans up and stops the camera to prevent memory leaks and the camera light staying on.
+
+#### [MODIFY] client/src/pages/common/ScanPage.jsx
+- Import and render the new `<QRCodeScanner />` component below the header.
+- Keep the manual token input as a fallback.
+- When the scanner triggers the `onScan(token)` callback, immediately invoke the existing `linkShop(token)` function.
+
+### User Review Required
+> [!IMPORTANT]
+> **Camera Permissions:** The browser will prompt the user for camera permissions the first time they open this page. If they deny it, the manual token entry will serve as a fallback. 
+> Does this sound good to you?
+
+---
+
+## Feature Plan: Vendor Payment Confirmation Flow
+
+### Goal Description
+When a buyer clicks "Pay Now" and records a payment, the vendor needs to be notified in real-time and provided with a UI to "Confirm Receipt" so the tab balance is actually cleared. Currently, the buyer's action creates a `pending` payment, but the vendor has no way to see or approve it.
+
+### Proposed Changes
+
+#### [MODIFY] server/src/controllers/paymentController.js
+- In `recordPayment`, emit a Socket.io event (`tab:payment-initiated`) to the vendor after creating the pending payment in the database.
+
+#### [MODIFY] client/src/pages/vendor/CustomerTab.jsx
+- **State**: Add a `pendingPayments` state to keep track of payments waiting for confirmation.
+- **Data Loading**: On component mount, fetch all payments for this tab (`GET /api/payments/tab/:tabId`) and filter for those with `status === 'pending'`.
+- **Real-time Updates**: Add a `useSocket` listener for `tab:payment-initiated` to instantly display incoming payments without the vendor needing to refresh.
+- **UI**: Add a new "Pending Payments" section (above the Quick Add grid) showing the amount and a bright "Confirm Receipt" button for each pending payment.
+- **Action**: When the vendor clicks "Confirm Receipt", it will call `PUT /api/payments/:paymentId/confirm`. This will update the tab balance and the existing socket logic will immediately update the UI.
+
+### User Review Required
+> [!IMPORTANT]
+> This flow requires the vendor to manually click "Confirm Receipt" before the buyer's balance goes down. This is the safest approach since we don't have a payment gateway verifying the UPI transfer automatically.
+> Do you approve this plan?
+
+---
+
+## Feature Plan: Payments & Receipts History
+
+### Goal Description
+Add dedicated "Payments" pages for both Buyers and Vendors. Vendors should be able to see a history of all payments they've received across all customers. Buyers should be able to see a history of all payments they've made across all shops. Clicking on any payment should open a digital "Receipt/Bill" view.
+
+### Proposed Changes
+
+#### [MODIFY] server/src/controllers/paymentController.js & routes
+- **New API `GET /api/payments/vendor`**: Finds all tabs belonging to the vendor's shop, then fetches all payments associated with those tabs, populated with the buyer's details.
+- **New API `GET /api/payments/buyer`**: Finds all tabs belonging to the buyer, then fetches all payments associated with those tabs, populated with the shop's details.
+
+#### [NEW] client/src/components/ReceiptModal.jsx
+- Create a reusable modal component styled like a printed digital receipt/bill showing:
+  - Amount Paid
+  - Date & Time
+  - Status (Pending/Confirmed)
+  - Parties involved (Shop Name & Buyer Name)
+  - Transaction ID / UPI Ref
+
+#### [NEW] client/src/pages/vendor/VendorPayments.jsx
+- A dedicated page fetching from `/api/payments/vendor`.
+- Displays a chronological list of payments received.
+- Clicking a payment opens the `ReceiptModal`.
+
+#### [NEW] client/src/pages/buyer/BuyerPayments.jsx
+- A dedicated page fetching from `/api/payments/buyer`.
+- Displays a chronological list of payments made.
+- Clicking a payment opens the `ReceiptModal`.
+
+#### [MODIFY] client/src/App.jsx & client/src/components/BottomNav.jsx
+- Register routing for `/vendor/payments` and `/buyer/payments`.
+- Add a new "Payments" icon/link (e.g., 💳) to the `BottomNav` for both vendor and buyer roles.
+
+### User Review Required
+> [!IMPORTANT]
+> - Do you want the new "Payments" page to be accessible from the bottom navigation bar for quick access? I've proposed adding it there.
+> - Do you approve this plan?
+
+---
+
+## Feature Plan: UI/UX Vibrant Design Overhaul
+
+### Goal Description
+The current UI is a bit dark and uses generic system emojis and basic colors. We will completely overhaul the design to look extremely premium, vibrant, and engaging. This involves switching to a deep-space dark mode with a highly vibrant Neon Cyan/Purple gradient primary theme, upgrading to a beautiful premium font (`Outfit`), and replacing all emojis with sleek, professional SVG icons from `lucide-react`.
+
+### Proposed Changes
+
+#### [MODIFY] client/package.json
+- Install `lucide-react` for premium SVG iconography.
+
+#### [MODIFY] client/index.html
+- Import the `Outfit` Google Font.
+
+#### [MODIFY] client/src/index.css
+- **Color Palette Overhaul**: Change the background to a rich `Deep Space Navy (#0b0914)` and the primary color to a glowing `Neon Cyan (#00f2fe)` paired with `Electric Blue (#4facfe)` gradients.
+- **Typography**: Set `--font: 'Outfit', sans-serif;` globally.
+- **Glassmorphism & Micro-animations**: Improve the `.card`, `.btn`, and `BottomNav` with stronger glassmorphism (blurs), gradient borders, and bouncy hover scaling effects.
+- **Glowing Elements**: Add prominent glow effects to primary buttons and active navigation links.
+
+#### [MODIFY] client/src/components/BottomNav.jsx
+- Replace all text emojis (🏠, 💳, 🏪, etc.) with matching SVG icons from `lucide-react` (e.g., `<Home />`, `<CreditCard />`, `<Store />`, `<Scan />`).
+- Update the active state styling to use the new glowing vibrant color.
+
+#### [MODIFY] Other Components & Pages
+- Replace stray emojis across the app (like the ✅ and ⏳ in `ReceiptModal`, the 👤 in profile pages, and category icons in `InventoryManager` and `ItemGrid`) with `lucide-react` icons to ensure the entire app feels cohesive and professional.
+
+### User Review Required
+> [!IMPORTANT]
+> - Do you approve this transition to a highly vibrant Neon/Cyberpunk-inspired dark theme with premium `Outfit` typography and `lucide-react` icons?
+
+---
+
 ## Open Questions
 
 > [!IMPORTANT]

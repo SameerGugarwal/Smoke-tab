@@ -1,21 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { Flame, Store, User } from 'lucide-react';
 
 export default function LoginPage() {
-  const { sendOtp, verifyOtp, registerUser, user } = useAuth();
+  const { login, registerUser, user } = useAuth();
   const navigate = useNavigate();
 
-  // Steps: phone → otp → register (only for new users)
-  const [step, setStep] = useState('phone');
+  // Steps: login (phone + dob) → register (name + role, for new users only)
+  const [step, setStep] = useState('login');
+  
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [dob, setDob] = useState('');
+  
   const [name, setName] = useState('');
   const [role, setRole] = useState('buyer');
+  const [upiId, setUpiId] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [registrationToken, setRegistrationToken] = useState(null);
-  const [resendTimer, setResendTimer] = useState(0);
 
   // If user is already logged in, redirect
   useEffect(() => {
@@ -24,104 +27,41 @@ export default function LoginPage() {
     }
   }, [user, navigate]);
 
-  // Resend countdown timer
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-    const interval = setInterval(() => setResendTimer((t) => t - 1), 1000);
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  // ── Step 1: Enter phone, request OTP ──
-  const handlePhoneSubmit = async (e) => {
+  // ── Step 1: Enter phone and DOB ──
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
     if (!phone.match(/^\d{10}$/)) return setError('Enter a valid 10-digit number');
+    if (!dob) return setError('Date of birth is required');
 
     setLoading(true);
     try {
-      await sendOtp(phone);
-      setStep('otp');
-      setResendTimer(30);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── OTP input handling ──
-  const handleOtpChange = (idx, val) => {
-    if (!/^\d?$/.test(val)) return;
-    const next = [...otp];
-    next[idx] = val;
-    setOtp(next);
-    if (val && idx < 5) document.getElementById(`otp-${idx + 1}`)?.focus();
-  };
-
-  const handleOtpKeyDown = (idx, e) => {
-    if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
-      document.getElementById(`otp-${idx - 1}`)?.focus();
-    }
-  };
-
-  // ── OTP paste support ──
-  const handleOtpPaste = (e) => {
-    const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (paste.length === 6) {
-      e.preventDefault();
-      setOtp(paste.split(''));
-      document.getElementById('otp-5')?.focus();
-    }
-  };
-
-  // ── Step 2: Verify OTP ──
-  const handleVerifyOtp = async () => {
-    const code = otp.join('');
-    if (code.length < 6) return setError('Enter the full 6-digit OTP');
-
-    setError('');
-    setLoading(true);
-    try {
-      const data = await verifyOtp({ phone, otp: code });
-
+      const data = await login(phone, dob);
+      
       if (data.isNewUser) {
-        // New user — needs to register (pick name + role)
-        setRegistrationToken(data.registrationToken);
+        // User does not exist, go to register step
         setStep('register');
       } else {
-        // Returning user — already logged in by AuthContext
+        // User exists and dob matched, AuthContext logged them in
         navigate(data.user.role === 'vendor' ? '/vendor' : '/buyer', { replace: true });
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message);
-      setOtp(['', '', '', '', '', '']);
-      document.getElementById('otp-0')?.focus();
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Resend OTP ──
-  const handleResendOtp = async () => {
-    if (resendTimer > 0) return;
-    setError('');
-    try {
-      await sendOtp(phone);
-      setResendTimer(30);
-      setOtp(['', '', '', '', '', '']);
-    } catch (err) {
-      setError(err.response?.data?.error || err.message);
-    }
-  };
-
-  // ── Step 3: Register new user ──
-  const handleRegister = async (e) => {
+  // ── Step 2: Register new user ──
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return setError('Enter your name');
+    
     setLoading(true);
     setError('');
     try {
-      const user = await registerUser({ registrationToken, name: name.trim(), role });
+      const user = await registerUser({ phone, dob, name: name.trim(), role, upiId: upiId.trim() });
       navigate(user.role === 'vendor' ? '/vendor' : '/buyer', { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -144,19 +84,24 @@ export default function LoginPage() {
       {/* Logo */}
       <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
         <div style={{
-          fontSize: '4rem',
           marginBottom: '0.5rem',
           animation: 'fadeIn 0.5s ease',
-        }}>🚬</div>
-        <h1 style={{ color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>SmokeTab</h1>
+          color: 'var(--color-primary)',
+          display: 'flex',
+          justifyContent: 'center'
+        }}>
+          <Flame size={64} strokeWidth={1.5} />
+        </div>
+        <h1 style={{ color: 'var(--color-primary)', letterSpacing: '-0.02em' }}>Tab</h1>
         <p style={{ marginTop: '0.25rem' }}>Your tapri tab, digitized</p>
       </div>
 
-      {/* ── Phone Step ── */}
-      {step === 'phone' && (
-        <form onSubmit={handlePhoneSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', animation: 'fadeIn 0.3s ease' }}>
+      {/* ── Login Step (Phone + DOB) ── */}
+      {step === 'login' && (
+        <form onSubmit={handleLoginSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
+          
           <div className="input-group">
-            <label className="input-label">Phone Number</label>
+            <label className="input-label">Mobile Number</label>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <div style={{
                 padding: '0 0.75rem',
@@ -186,99 +131,40 @@ export default function LoginPage() {
               />
             </div>
           </div>
+
+          <div className="input-group">
+            <label className="input-label">Date of Birth</label>
+            <input
+              type="date"
+              className="input"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              style={{
+                cursor: 'text', // Allows clicking on the input nicely
+                colorScheme: 'dark' // Helps the native date picker look good in dark mode
+              }}
+            />
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: '-0.25rem' }}>
+              You must be 18+ to use Tab.
+            </p>
+          </div>
+
           {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }}>{error}</p>}
-          <button className="btn btn-primary btn-lg" type="submit" disabled={loading || phone.length < 10}>
-            {loading ? 'Sending OTP...' : 'Get OTP →'}
+          
+          <button className="btn btn-primary btn-lg" type="submit" disabled={loading || phone.length < 10 || !dob}>
+            {loading ? 'Continuing...' : 'Continue →'}
           </button>
         </form>
       )}
 
-      {/* ── OTP Step ── */}
-      {step === 'otp' && (
-        <div style={{ width: '100%', animation: 'fadeIn 0.3s ease' }}>
-          <p style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-            Enter the 6-digit OTP sent to
-          </p>
-          <p style={{ textAlign: 'center', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '1.5rem' }}>
-            +91 {phone}
-          </p>
-
-          <div className="otp-container" style={{ marginBottom: '1.5rem' }} onPaste={handleOtpPaste}>
-            {otp.map((digit, idx) => (
-              <input
-                key={idx}
-                id={`otp-${idx}`}
-                className="otp-input"
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleOtpChange(idx, e.target.value)}
-                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                autoFocus={idx === 0}
-              />
-            ))}
-          </div>
-
-          {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', textAlign: 'center', marginBottom: '1rem' }}>{error}</p>}
-
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={handleVerifyOtp}
-            disabled={loading || otp.join('').length < 6}
-          >
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-            <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: resendTimer > 0 ? 'var(--color-text-dim)' : 'var(--color-primary)',
-                cursor: resendTimer > 0 ? 'default' : 'pointer',
-                fontFamily: 'var(--font)',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-              }}
-              onClick={handleResendOtp}
-              disabled={resendTimer > 0}
-            >
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
-            </button>
-
-            <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--color-text-muted)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font)',
-                fontSize: '0.85rem',
-              }}
-              onClick={() => { setStep('phone'); setOtp(['', '', '', '', '', '']); setError(''); }}
-            >
-              ← Change number
-            </button>
-          </div>
-
-          {/* Dev hint */}
-          <div className="card" style={{ marginTop: '1.5rem', borderColor: 'var(--color-warning)', padding: '0.75rem 1rem' }}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              💡 <span>Check your server terminal for the OTP (dev mode)</span>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Register Step (new users only) ── */}
+      {/* ── Register Step (New users only) ── */}
       {step === 'register' && (
-        <form onSubmit={handleRegister} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', animation: 'fadeIn 0.3s ease' }}>
+        <form onSubmit={handleRegisterSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeIn 0.3s ease' }}>
           <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-            <span className="badge badge-success" style={{ fontSize: '0.8rem' }}>✓ Phone verified</span>
+            <span className="badge badge-primary" style={{ fontSize: '0.8rem' }}>Welcome to Tab!</span>
           </div>
 
-          <h2 style={{ textAlign: 'center' }}>Complete your profile</h2>
+          <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Complete your profile</h2>
 
           <div className="input-group">
             <label className="input-label">Your Name</label>
@@ -295,9 +181,9 @@ export default function LoginPage() {
             <label className="input-label">I am a...</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               {[
-                { key: 'vendor', emoji: '🏪', label: 'Shop Owner' },
-                { key: 'buyer', emoji: '👤', label: 'Customer' },
-              ].map(({ key, emoji, label }) => (
+                { key: 'vendor', icon: <Store size={32} strokeWidth={1.5} />, label: 'Shop Owner' },
+                { key: 'buyer', icon: <User size={32} strokeWidth={1.5} />, label: 'Customer' },
+              ].map(({ key, icon, label }) => (
                 <button
                   key={key}
                   type="button"
@@ -318,17 +204,43 @@ export default function LoginPage() {
                     transition: 'all 0.2s',
                   }}
                 >
-                  <span style={{ fontSize: '2rem' }}>{emoji}</span>
+                  <div style={{ marginBottom: '0.25rem' }}>{icon}</div>
                   <span>{label}</span>
                 </button>
               ))}
             </div>
           </div>
 
+          {role === 'buyer' && (
+            <div className="input-group" style={{ animation: 'fadeIn 0.3s ease' }}>
+              <label className="input-label">Your UPI ID</label>
+              <input
+                className="input"
+                placeholder="e.g. 9876543210@ybl"
+                value={upiId}
+                onChange={(e) => setUpiId(e.target.value.toLowerCase())}
+              />
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: '-0.25rem' }}>
+                Required to settle tabs via UPI directly from the app.
+              </p>
+            </div>
+          )}
+
           {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }}>{error}</p>}
-          <button className="btn btn-primary btn-lg" type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Enter SmokeTab →'}
-          </button>
+          
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button
+              className="btn btn-ghost btn-lg"
+              type="button"
+              onClick={() => { setStep('login'); setError(''); }}
+              style={{ flex: 1, padding: '1rem' }}
+            >
+              Back
+            </button>
+            <button className="btn btn-primary btn-lg" type="submit" disabled={loading} style={{ flex: 2 }}>
+              {loading ? 'Creating...' : 'Enter Tab'}
+            </button>
+          </div>
         </form>
       )}
     </div>

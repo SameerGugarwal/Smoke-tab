@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { formatAmount, getInitials } from '../../lib/helpers';
@@ -15,6 +15,7 @@ export default function CustomerTab() {
   const [tab, setTab] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [items, setItems] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [limitWarning, setLimitWarning] = useState(null);
@@ -26,6 +27,7 @@ export default function CustomerTab() {
     const s = connectSocket();
     s.emit('join:tab', { tabId });
     return () => s.emit('leave:tab', { tabId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabId]);
 
   useSocket('tab:payment-received', ({ tab: updatedTab }) => {
@@ -35,15 +37,24 @@ export default function CustomerTab() {
     }
   });
 
+  useSocket('tab:payment-initiated', ({ payment }) => {
+    if (payment.tabId === tabId) {
+      setPendingPayments((prev) => [payment, ...prev]);
+      showToast('Buyer recorded a payment!');
+    }
+  });
+
   const loadData = async () => {
     try {
-      const [tabRes, invRes] = await Promise.all([
+      const [tabRes, invRes, payRes] = await Promise.all([
         api.get(`/tabs/${tabId}`),
         api.get('/shops/mine/inventory'),
+        api.get(`/payments/tab/${tabId}`),
       ]);
       setTab(tabRes.data.tab);
       setTransactions(tabRes.data.transactions);
       setItems(invRes.data.items);
+      setPendingPayments(payRes.data.payments.filter(p => p.status === 'pending'));
     } finally {
       setLoading(false);
     }
@@ -52,6 +63,15 @@ export default function CustomerTab() {
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 2500);
+  };
+
+  const confirmPayment = async (paymentId) => {
+    try {
+      await api.put(`/payments/${paymentId}/confirm`);
+      setPendingPayments((prev) => prev.filter((p) => p._id !== paymentId));
+    } catch {
+      showToast('Error confirming payment');
+    }
   };
 
   const addItem = async (item, override = false) => {
@@ -119,6 +139,26 @@ export default function CustomerTab() {
           {formatAmount(tab?.balanceDue)}
         </div>
       </div>
+
+      {/* Pending Payments */}
+      {pendingPayments.length > 0 && (
+        <div style={{ marginTop: '1rem' }}>
+          <div className="section-title" style={{ color: 'var(--color-warning)' }}>Pending Payments</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {pendingPayments.map((p) => (
+              <div key={p._id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderColor: 'var(--color-warning)' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold' }}>{formatAmount(p.amount)}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>via {p.method.toUpperCase()}</div>
+                </div>
+                <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }} onClick={() => confirmPayment(p._id)}>
+                  Confirm Receipt
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick-add grid */}
       <div>

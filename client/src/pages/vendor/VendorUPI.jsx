@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { Landmark } from 'lucide-react';
 
 export default function VendorUPI() {
   const [upiId, setUpiId] = useState('');
@@ -53,7 +54,7 @@ export default function VendorUPI() {
   return (
     <div className="page">
       <div className="page-header">
-        <div className="list-item-icon">🏦</div>
+        <div className="list-item-icon"><Landmark size={24} /></div>
         <h3>Payment Setup</h3>
       </div>
 

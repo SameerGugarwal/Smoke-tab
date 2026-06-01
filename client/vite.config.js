@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'SmokeTab',
-        short_name: 'SmokeTab',
+        name: 'Tab',
+        short_name: 'Tab',
         description: 'Buy now, pay later tab system for tapri shops',
         theme_color: '#0a0a0f',
         background_color: '#0a0a0f',

@@ -32,7 +32,7 @@ export default function LimitsPage() {
       });
       setForm({ limitType: 'daily_count', limitValue: '', itemCategory: 'cigarette' });
       showToast('Limit saved ✅');
-    } catch (err) {
+    } catch {
       showToast('Error saving');
     } finally {
       setSaving(false);

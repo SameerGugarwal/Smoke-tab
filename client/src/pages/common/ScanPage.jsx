@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
+import QRCodeScanner from '../../components/QRCodeScanner';
 
 export default function ScanPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [manualToken, setManualToken] = useState('');
 
@@ -14,18 +14,18 @@ export default function ScanPage() {
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) linkShop(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const linkShop = async (token) => {
+    if (loading || success) return;
     setLoading(true);
-    setError('');
     try {
       const res = await api.post('/tabs/link', { qrToken: token });
       setSuccess(`Connected to ${res.data.tab?.shopId?.name || 'shop'}! Redirecting...`);
       setTimeout(() => navigate('/buyer'), 2000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid QR code');
-    } finally {
+      alert(err.response?.data?.error || 'Invalid QR code');
       setLoading(false);
     }
   };
@@ -35,7 +35,9 @@ export default function ScanPage() {
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>📷</div>
         <h2>Scan Shop QR</h2>
-        <p>Ask the vendor to show you their SmokeTab QR code</p>
+        <div className="card" style={{ padding: '1.5rem', textAlign: 'center', marginTop: '1rem', marginBottom: '1.5rem' }}>
+          <p>Ask the vendor to show you their Tab QR code</p>
+        </div>
       </div>
 
       {loading && (
@@ -52,14 +54,14 @@ export default function ScanPage() {
         </div>
       )}
 
-      {error && (
-        <div className="card" style={{ borderColor: 'var(--color-danger)', width: '100%' }}>
-          <p style={{ color: 'var(--color-danger)' }}>{error}</p>
-        </div>
-      )}
+
 
       {!loading && !success && (
         <div style={{ width: '100%' }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <QRCodeScanner onScan={(token) => linkShop(token)} />
+          </div>
+
           <div className="divider" style={{ margin: '1.5rem 0' }} />
           <div className="section-title">Or enter token manually</div>
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>

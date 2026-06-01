@@ -1,10 +1,14 @@
 import { formatAmount, timeAgo } from '../lib/helpers';
+import LucideIcon from './LucideIcon';
+import { Receipt } from 'lucide-react';
 
 export default function TransactionList({ transactions, onDelete, isVendor }) {
   if (!transactions?.length) {
     return (
       <div className="empty-state">
-        <span className="empty-icon">🧾</span>
+        <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center' }}>
+          <Receipt size={48} />
+        </div>
         <p>No transactions yet</p>
       </div>
     );
@@ -37,7 +41,7 @@ export default function TransactionList({ transactions, onDelete, isVendor }) {
               flexShrink: 0,
             }}
           >
-            {tx.itemIcon || '🚬'}
+            <LucideIcon nameOrEmoji={tx.itemIcon || '🚬'} size={24} />
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>

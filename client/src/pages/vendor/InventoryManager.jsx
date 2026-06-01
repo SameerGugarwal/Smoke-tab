@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { formatAmount } from '../../lib/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import LucideIcon from '../../components/LucideIcon';
 
 const ICONS = ['🚬', '☕', '🍬', '🧃', '🍫', '💊', '🧈', '🥤', '🍵', '🌿'];
 const CATEGORIES = ['cigarette', 'chai', 'gum', 'other'];
@@ -59,7 +60,7 @@ export default function InventoryManager() {
       setSyncMsg(res.data.message);
       if (res.data.added > 0) loadItems();
       setTimeout(() => setSyncMsg(''), 3000);
-    } catch (err) {
+    } catch {
       setSyncMsg('Error syncing catalog');
     } finally {
       setSyncing(false);
@@ -105,7 +106,9 @@ export default function InventoryManager() {
               borderRadius: 'var(--radius-sm)',
             }}
           >
-            <span style={{ fontSize: '1.5rem' }}>{item.icon}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px' }}>
+              <LucideIcon nameOrEmoji={item.icon} size={28} />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600 }}>{item.name}</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.category}</div>
@@ -149,8 +152,13 @@ export default function InventoryManager() {
                       borderRadius: '8px',
                       fontSize: '1.2rem',
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
-                  >{ic}</button>
+                  >
+                    <LucideIcon nameOrEmoji={ic} size={20} color={form.icon === ic ? 'var(--color-primary)' : 'var(--color-text)'} />
+                  </button>
                 ))}
               </div>
             </div>

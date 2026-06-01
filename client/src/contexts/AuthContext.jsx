@@ -4,6 +4,7 @@ import { connectSocket, disconnectSocket } from '../lib/socket';
 
 const AuthContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -23,22 +24,16 @@ export const AuthProvider = ({ children }) => {
           // Token invalid/expired — clear it
           localStorage.removeItem('smoketab_token');
         })
-        .finally(() => setLoading(false));
+        .finally(() => setTimeout(() => setLoading(false), 0));
     } else {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 0);
     }
   }, []);
 
-  // Step 1: Send OTP to phone number
-  const sendOtp = async (phone) => {
-    const res = await api.post('/auth/send-otp', { phone });
-    return res.data;
-  };
-
-  // Step 2: Verify OTP
-  // Returns { token, user, isNewUser } or { registrationToken, isNewUser }
-  const verifyOtp = async ({ phone, otp }) => {
-    const res = await api.post('/auth/verify-otp', { phone, otp });
+  // Step 1: Login with Phone and DOB
+  // Returns { token, user, isNewUser: false } or { isNewUser: true }
+  const login = async (phone, dob) => {
+    const res = await api.post('/auth/login', { phone, dob });
     const data = res.data;
 
     if (!data.isNewUser) {
@@ -51,12 +46,9 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  // Step 3: Register new user (after OTP verified)
-  const registerUser = async ({ registrationToken, name, role }) => {
-    const res = await api.post('/auth/register',
-      { name, role },
-      { headers: { Authorization: `Bearer ${registrationToken}` } }
-    );
+  // Step 2: Register new user
+  const registerUser = async (userData) => {
+    const res = await api.post('/auth/register', userData);
     const data = res.data;
     localStorage.setItem('smoketab_token', data.token);
     setUser(data.user);
@@ -71,7 +63,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, sendOtp, verifyOtp, registerUser, signOut }}>
+    <AuthContext.Provider value={{ user, loading, login, registerUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

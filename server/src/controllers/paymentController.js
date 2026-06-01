@@ -1,5 +1,6 @@
 const Payment = require('../models/Payment');
 const Tab = require('../models/Tab');
+const Shop = require('../models/Shop');
 
 // Record a payment (buyer initiates)
 const recordPayment = async (req, res) => {
@@ -11,6 +12,10 @@ const recordPayment = async (req, res) => {
     if (!tab) return res.status(404).json({ error: 'Tab not found' });
 
     const payment = await Payment.create({ tabId, amount, method, upiRef, status: 'pending' });
+    
+    // Emit socket event to notify vendor of pending payment
+    req.io?.to(`tab:${tabId}`).emit('tab:payment-initiated', { payment });
+    
     res.status(201).json({ payment });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,5 +57,45 @@ const getTabPayments = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// Get all payments for a vendor
+const getVendorPayments = async (req, res) => {
+  try {
+    const shop = await Shop.findOne({ vendorId: req.user._id });
+    if (!shop) return res.status(404).json({ error: 'No shop found' });
 
-module.exports = { recordPayment, confirmPayment, getTabPayments };
+    const tabs = await Tab.find({ shopId: shop._id });
+    const tabIds = tabs.map(t => t._id);
+
+    const payments = await Payment.find({ tabId: { $in: tabIds } })
+      .populate({
+        path: 'tabId',
+        populate: { path: 'buyerId', select: 'name phone avatarUrl' }
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({ payments });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get all payments for a buyer
+const getBuyerPayments = async (req, res) => {
+  try {
+    const tabs = await Tab.find({ buyerId: req.user._id });
+    const tabIds = tabs.map(t => t._id);
+
+    const payments = await Payment.find({ tabId: { $in: tabIds } })
+      .populate({
+        path: 'tabId',
+        populate: { path: 'shopId', select: 'name upiId' }
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({ payments });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = { recordPayment, confirmPayment, getTabPayments, getVendorPayments, getBuyerPayments };

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import { formatAmount, getInitials } from '../../lib/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { Users } from 'lucide-react';
 
 export default function VendorDashboard() {
   const { user, signOut } = useAuth();
@@ -84,7 +85,10 @@ export default function VendorDashboard() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Welcome back,</div>
           <h2>{user?.name}</h2>
         </div>
-        <button onClick={signOut} className="btn btn-ghost btn-sm">Sign out</button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => navigate('/vendor/upi')} className="btn btn-ghost btn-sm">UPI Setup</button>
+          <button onClick={signOut} className="btn btn-ghost btn-sm">Sign out</button>
+        </div>
       </div>
 
       {/* Shop info + total exposure */}
@@ -103,8 +107,10 @@ export default function VendorDashboard() {
         <div className="section-title">Customers</div>
         {tabs.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">👥</span>
-            <p>No customers yet. Share your QR code to get started.</p>
+            <div className="empty-icon" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Users size={48} strokeWidth={1} />
+            </div>
+            <p>No active customer tabs yet.<br />Share your QR code to get started!</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
