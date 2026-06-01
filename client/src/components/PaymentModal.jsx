@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatAmount, buildUpiLink, isMobile } from '../lib/helpers';
 import api from '../lib/api';
@@ -13,60 +13,90 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
   const [showQr, setShowQr] = useState(false);
   const [showBetaAlert, setShowBetaAlert] = useState(false);
   const [showUpiDropdown, setShowUpiDropdown] = useState(false);
+  const [qrImageDataUrl, setQrImageDataUrl] = useState('');
 
   const amountRupees = (amount / 100).toFixed(2);
   const upiLink = shop?.upiId ? buildUpiLink(shop.upiId, amount, shop.name) : null;
   const mobile = isMobile();
 
-  const recordPending = async (method = 'upi') => {
+  // Background QR code PNG generation (essential for synchronous, unblocked iOS downloads)
+  useEffect(() => {
+    if (!upiLink) return;
+
+    const generateQrPng = () => {
+      try {
+        const svg = document.querySelector('.hidden-qr-generator svg');
+        if (!svg) {
+          // If the DOM hasn't rendered the hidden generator yet, retry in a moment
+          setTimeout(generateQrPng, 100);
+          return;
+        }
+
+        const svgString = new XMLSerializer().serializeToString(svg);
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const URL = window.URL || window.webkitURL || window;
+        const blobURL = URL.createObjectURL(svgBlob);
+        
+        const image = new Image();
+        image.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 300;
+          canvas.height = 300;
+          const context = canvas.getContext('2d');
+          
+          // Solid white background for scanning reliability
+          context.fillStyle = '#FFFFFF';
+          context.fillRect(0, 0, 300, 300);
+          context.drawImage(image, 25, 25, 250, 250);
+          
+          const pngURL = canvas.toDataURL('image/png');
+          setQrImageDataUrl(pngURL);
+          URL.revokeObjectURL(blobURL);
+        };
+        image.src = blobURL;
+      } catch (err) {
+        console.error('Failed to pre-generate QR png', err);
+      }
+    };
+
+    // Reset old PNG while generating the new one (e.g. if amount changes)
+    setQrImageDataUrl('');
+    generateQrPng();
+  }, [upiLink]);
+
+  const recordPending = async (methodType = 'upi') => {
+    // If called directly by onClick event handler, methodType gets the React Event object.
+    // We protect against this by checking if it's a string, and default to 'upi'.
+    const finalMethod = (typeof methodType === 'string') ? methodType : 'upi';
+
     setLoading(true);
     try {
-      await api.post('/payments', { tabId: tab._id, amount, method });
+      await api.post('/payments', { tabId: tab._id, amount, method: finalMethod });
       setPaid(true);
       setTimeout(() => { onClose(); onConfirmed?.(); }, 2000);
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.error || err.message || 'Failed to record payment. Please try again.');
       setLoading(false);
     }
   };
 
   const downloadQrCode = () => {
+    if (!qrImageDataUrl) {
+      alert('Generating QR image, please try again in a second or take a screenshot.');
+      return;
+    }
     try {
-      const svg = document.querySelector('.payment-qr-container svg');
-      if (!svg) return;
-
-      const svgString = new XMLSerializer().serializeToString(svg);
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-      const URL = window.URL || window.webkitURL || window;
-      const blobURL = URL.createObjectURL(svgBlob);
-      
-      const image = new Image();
-      image.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 300;
-        canvas.height = 300;
-        const context = canvas.getContext('2d');
-        
-        // Fill canvas with white background so scanner apps can easily read it
-        context.fillStyle = '#FFFFFF';
-        context.fillRect(0, 0, 300, 300);
-        
-        // Draw the QR code in the center
-        context.drawImage(image, 25, 25, 250, 250);
-        
-        const pngURL = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pngURL;
-        downloadLink.download = `smoketab_pay_${shop?.name || 'shop'}.png`;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(blobURL);
-      };
-      image.src = blobURL;
+      // Synchronous click execution (will never be blocked by mobile browser popup blockers)
+      const downloadLink = document.createElement('a');
+      downloadLink.href = qrImageDataUrl;
+      downloadLink.download = `smoketab_pay_${shop?.name || 'shop'}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     } catch (err) {
       console.error('Failed to download QR code', err);
-      alert('Failed to save QR code. Please take a screenshot instead.');
+      alert('Automatic save failed. Please long-press (hold) the QR code image to save it.');
     }
   };
 
@@ -209,7 +239,15 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
                 </p>
                 <div className="payment-qr-container" style={{ textAlign: 'center', marginTop: '1rem' }}>
                   <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
-                    <QRCodeSVG value={upiLink} size={150} />
+                    {qrImageDataUrl ? (
+                      <img 
+                        src={qrImageDataUrl} 
+                        alt="UPI QR Code" 
+                        style={{ width: '160px', height: '160px', display: 'block', margin: '0 auto', userSelect: 'auto', WebkitUserSelect: 'auto' }} 
+                      />
+                    ) : (
+                      <QRCodeSVG value={upiLink} size={150} />
+                    )}
                   </div>
                 </div>
 
@@ -219,11 +257,15 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
                       className="btn btn-ghost btn-sm"
                       style={{ border: '1px solid var(--color-border)', width: '100%', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'var(--color-surface1)' }}
                       onClick={downloadQrCode}
+                      disabled={!qrImageDataUrl}
                     >
                       📥 Save QR to Gallery
                     </button>
                     <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', lineHeight: '1.4', margin: 0 }}>
                       <strong>Steps:</strong> Once saved, open <strong>Google Pay</strong>, <strong>PhonePe</strong>, or <strong>Paytm</strong>. Tap the scanner icon, click <strong>"Upload from Gallery"</strong>, choose this image, and complete your payment!
+                    </p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--color-text-dim)', lineHeight: '1.4', margin: 0, marginTop: '0.5rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
+                      💡 <strong>Tip for iPhone:</strong> If saving fails, just <strong>press and hold (long-press)</strong> the QR image above and tap <strong>"Add to Photos"</strong>!
                     </p>
                   </div>
                 )}
@@ -232,7 +274,7 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
                   <button 
                     className="btn btn-primary btn-sm" 
                     style={{ marginTop: '0.85rem', width: '100%' }}
-                    onClick={recordPending}
+                    onClick={() => recordPending('upi')}
                     disabled={loading}
                   >
                     {loading ? '...' : 'I have sent the payment'}
@@ -331,6 +373,13 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
               Cancel
             </button>
           </>
+        )}
+
+        {/* Hidden QR Generator for synchronous PNG conversions */}
+        {upiLink && (
+          <div style={{ display: 'none' }} className="hidden-qr-generator">
+            <QRCodeSVG value={upiLink} size={250} />
+          </div>
         )}
       </div>
     </div>
