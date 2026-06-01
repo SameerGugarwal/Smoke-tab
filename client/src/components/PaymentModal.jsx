@@ -28,6 +28,46 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
     }
   };
 
+  const downloadQrCode = () => {
+    try {
+      const svg = document.querySelector('.payment-qr-container svg');
+      if (!svg) return;
+
+      const svgString = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+      
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 300;
+        canvas.height = 300;
+        const context = canvas.getContext('2d');
+        
+        // Fill canvas with white background so scanner apps can easily read it
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, 300, 300);
+        
+        // Draw the QR code in the center
+        context.drawImage(image, 25, 25, 250, 250);
+        
+        const pngURL = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngURL;
+        downloadLink.download = `smoketab_pay_${shop?.name || 'shop'}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(blobURL);
+      };
+      image.src = blobURL;
+    } catch (err) {
+      console.error('Failed to download QR code', err);
+      alert('Failed to save QR code. Please take a screenshot instead.');
+    }
+  };
+
   const handleSpecificPay = async (app) => {
     if (!user?.upiId) {
       alert("Missing UPI ID! Please update your profile.");
@@ -142,11 +182,27 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
                 <p style={{ color: showUpiError ? 'var(--color-danger)' : 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
                   {showUpiError ? "Could not launch UPI app. Please scan the QR code:" : "Scan this QR code with any UPI app to pay:"}
                 </p>
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                <div className="payment-qr-container" style={{ textAlign: 'center', marginTop: '1rem' }}>
                   <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
                     <QRCodeSVG value={upiLink} size={150} />
                   </div>
                 </div>
+
+                {mobile && (
+                  <div style={{ marginTop: '1rem', textAlign: 'center', background: 'var(--color-surface2)', padding: '0.75rem', borderRadius: '10px', border: '1px dashed var(--color-border)' }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ border: '1px solid var(--color-border)', width: '100%', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'var(--color-surface1)' }}
+                      onClick={downloadQrCode}
+                    >
+                      📥 Save QR to Gallery
+                    </button>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', lineHeight: '1.4', margin: 0 }}>
+                      <strong>Steps:</strong> Once saved, open <strong>Google Pay</strong>, <strong>PhonePe</strong>, or <strong>Paytm</strong>. Tap the scanner icon, click <strong>"Upload from Gallery"</strong>, choose this image, and complete your payment!
+                    </p>
+                  </div>
+                )}
+
                 {showQr && (
                   <button 
                     className="btn btn-primary btn-sm" 
