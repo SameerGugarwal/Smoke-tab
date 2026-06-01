@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
 export default function QRCodeScanner({ onScan, onError }) {
-  const scannerRef = useRef(null);
 
   useEffect(() => {
     let html5QrcodeScanner = null;

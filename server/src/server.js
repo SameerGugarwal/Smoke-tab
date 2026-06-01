@@ -1,4 +1,15 @@
 require('dotenv').config();
+
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION! Shutting down...', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('UNHANDLED REJECTION! Shutting down...', err);
+  process.exit(1);
+});
+
 const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./app');
@@ -21,7 +32,7 @@ const io = new Server(server, {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true);
+        callback(new Error('Not allowed by CORS'));
       }
     },
     methods: ['GET', 'POST'],
