@@ -1,4 +1,4 @@
-# 🚬 SmokeTab
+#  SmokeTab
 
 > **The digital "buy now, pay later" (tab) system for small shops, tapris, paan vendors, and their regular customers.**
 
