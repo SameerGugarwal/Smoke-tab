@@ -74,6 +74,16 @@ export default function CustomerTab() {
     }
   };
 
+  const rejectPayment = async (paymentId) => {
+    try {
+      await api.put(`/payments/${paymentId}/reject`);
+      setPendingPayments((prev) => prev.filter((p) => p._id !== paymentId));
+      showToast('Payment rejected');
+    } catch {
+      showToast('Error rejecting payment');
+    }
+  };
+
   const addItem = async (item, override = false) => {
     setAdding(true);
     try {
@@ -151,9 +161,14 @@ export default function CustomerTab() {
                   <div style={{ fontWeight: 'bold' }}>{formatAmount(p.amount)}</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>via {p.method.toUpperCase()}</div>
                 </div>
-                <button className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }} onClick={() => confirmPayment(p._id)}>
-                  Confirm Receipt
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button className="btn btn-ghost btn-sm" style={{ padding: '8px 12px', fontSize: '0.9rem', color: 'var(--color-danger)' }} onClick={() => rejectPayment(p._id)}>
+                    Reject
+                  </button>
+                  <button className="btn btn-primary btn-sm" style={{ padding: '8px 16px', fontSize: '0.9rem' }} onClick={() => confirmPayment(p._id)}>
+                    Confirm
+                  </button>
+                </div>
               </div>
             ))}
           </div>

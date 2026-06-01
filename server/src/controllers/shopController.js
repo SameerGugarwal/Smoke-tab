@@ -3,50 +3,58 @@ const InventoryItem = require('../models/InventoryItem');
 
 const DEFAULT_ITEMS = [
   // ── Marlboro (Godfrey Phillips / Philip Morris) ──
-  { name: 'Marlboro Red', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 0 },
-  { name: 'Marlboro Gold', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 1 },
-  { name: 'Marlboro Advance', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 2 },
-  { name: 'Marlboro Fuse Beyond', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 3 },
-  { name: 'Marlboro Fine Touch', icon: '🚬', price: 1950, category: 'cigarette', sortOrder: 4 },
-  { name: 'Marlboro Double Burst', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 5 },
-  { name: 'Marlboro Purple Burst', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 6 },
-  { name: 'Marlboro Compact', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 7 },
-  { name: 'Marlboro Filter Black', icon: '🚬', price: 2100, category: 'cigarette', sortOrder: 8 },
+  { name: 'Marlboro Red (Indian)', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 1 },
+  { name: 'Marlboro Gold', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 2 },
+  { name: 'Marlboro Advance', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 3 },
+  { name: 'Marlboro Fuse Beyond', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 4 },
+  { name: 'Marlboro Fine Touch', icon: '🚬', price: 1950, category: 'cigarette', sortOrder: 5 },
+  { name: 'Marlboro Light (Imported)', icon: '🚬', price: 3000, category: 'cigarette', sortOrder: 6 },
+  { name: 'Marlboro Double Burst', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 7 },
+  { name: 'Marlboro Red (Imported)', icon: '🚬', price: 3000, category: 'cigarette', sortOrder: 8 },
+  { name: 'Marlboro Purple Burst', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 9 },
+  { name: 'Marlboro Compact', icon: '🚬', price: 2400, category: 'cigarette', sortOrder: 10 },
+  { name: 'Marlboro Filter Black', icon: '🚬', price: 2200, category: 'cigarette', sortOrder: 11 },
 
   // ── Gold Flake (ITC) ──
-  { name: 'Gold Flake Kings Blue', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 9 },
-  { name: 'Gold Flake Kings Twin Pod', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 10 },
-  { name: 'Gold Flake Neo Smart', icon: '🚬', price: 950, category: 'cigarette', sortOrder: 11 },
-  { name: 'Gold Flake Indie Mint', icon: '🚬', price: 1000, category: 'cigarette', sortOrder: 12 },
-  { name: 'Gold Flake Blue Mint Switch', icon: '🚬', price: 950, category: 'cigarette', sortOrder: 13 },
+  { name: 'Gold Flake Kings Blue', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 12 },
+  { name: 'Gold Flake Kings Twin Pod', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 13 },
+  { name: 'Gold Flake Neo Smart', icon: '🚬', price: 950, category: 'cigarette', sortOrder: 14 },
+  { name: 'Gold Flake Indie Mint', icon: '🚬', price: 1000, category: 'cigarette', sortOrder: 15 },
+  { name: 'Gold Flake Premium Blue Mint Switch', icon: '🚬', price: 950, category: 'cigarette', sortOrder: 16 },
 
   // ── Four Square (Godfrey Phillips) ──
-  { name: 'Four Square Kings', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 14 },
-  { name: 'Four Square Special', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 15 },
-  { name: 'Four Square Crush Clove', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 16 },
-  { name: 'Four Square Crush Tropical', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 17 },
-  { name: 'Four Square Crush Saunf', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 18 },
+  { name: 'Four Square Kings', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 17 },
+  { name: 'Four Square Special', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 18 },
+  { name: 'Four Square Crush Clove', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 19 },
+  { name: 'Four Square Crush Tropical Mix', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 20 },
+  { name: 'Four Square Crush Saunf Mix', icon: '🚬', price: 900, category: 'cigarette', sortOrder: 21 },
 
   // ── Classic / Wills Classic (ITC) ──
-  { name: 'Classic Regular', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 19 },
-  { name: 'Classic Milds', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 20 },
-  { name: 'Classic Ultra Milds', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 21 },
-  { name: 'Classic Ice Burst', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 22 },
-  { name: 'Classic Verve', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 23 },
-  { name: 'Classic Connect', icon: '🚬', price: 1500, category: 'cigarette', sortOrder: 24 },
-  { name: 'Classic Red', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 25 },
-  { name: 'Classic Shift', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 26 },
-  { name: 'Classic Double Burst', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 27 },
+  { name: 'Classic Regular (Filter Kings)', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 22 },
+  { name: 'Classic Milds', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 23 },
+  { name: 'Classic Ultra Milds', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 24 },
+  { name: 'Classic Ice Burst', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 25 },
+  { name: 'Classic Verve', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 26 },
+  { name: 'Classic Connect', icon: '🚬', price: 1500, category: 'cigarette', sortOrder: 27 },
+  { name: 'Classic Red', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 28 },
+  { name: 'Shift (by Classic/ITC)', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 29 },
+  { name: 'Classic Double Burst', icon: '🚬', price: 1700, category: 'cigarette', sortOrder: 30 },
 
   // ── Dunhill (BAT) ──
-  { name: 'Dunhill International', icon: '🚬', price: 1900, category: 'cigarette', sortOrder: 28 },
-  { name: 'Dunhill Switch', icon: '🚬', price: 1950, category: 'cigarette', sortOrder: 29 },
-  { name: 'Dunhill Switch 8mg', icon: '🚬', price: 2625, category: 'cigarette', sortOrder: 30 },
+  { name: 'Dunhill International', icon: '🚬', price: 1900, category: 'cigarette', sortOrder: 31 },
+  { name: 'Dunhill Switch', icon: '🚬', price: 1950, category: 'cigarette', sortOrder: 32 },
+  { name: 'Dunhill Switch 8mg', icon: '🚬', price: 2625, category: 'cigarette', sortOrder: 33 },
 
-  // ── Others ──
-  { name: 'Bidi', icon: '🚬', price: 500, category: 'cigarette', sortOrder: 31 },
-  { name: 'Chai', icon: '☕', price: 1000, category: 'chai', sortOrder: 32 },
-  { name: 'Gum', icon: '🍬', price: 500, category: 'gum', sortOrder: 33 },
+  // ── Other Brands ──
+  { name: 'Gudang Garam International', icon: '🚬', price: 2500, category: 'cigarette', sortOrder: 34 },
+  { name: 'Wills Navy Cut', icon: '🚬', price: 1000, category: 'cigarette', sortOrder: 35 },
+  { name: 'Esse Lights / Menthol', icon: '🚬', price: 1500, category: 'cigarette', sortOrder: 36 },
+
+  // ── Essentials ──
+  { name: 'Chai', icon: '☕', price: 1000, category: 'chai', sortOrder: 37 },
+  { name: 'Coffee', icon: '☕', price: 1500, category: 'chai', sortOrder: 38 },
+  { name: 'Bidi (Bundle)', icon: '🚬', price: 2500, category: 'cigarette', sortOrder: 39 },
+  { name: 'Gum', icon: '🍬', price: 500, category: 'gum', sortOrder: 40 },
 ];
 
 // Create shop (vendor onboarding)

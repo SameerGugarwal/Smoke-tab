@@ -10,5 +10,6 @@ router.get('/:tabId', auth, ctrl.getTabDetail);
 router.post('/:tabId/transactions', auth, ctrl.addTransaction);
 router.delete('/:tabId/transactions/:txId', auth, ctrl.deleteTransaction);
 router.get('/:tabId/consumption', auth, ctrl.getConsumption);
+router.delete('/:tabId/leave', auth, ctrl.leaveTab);
 
 module.exports = router;

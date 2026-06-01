@@ -16,6 +16,15 @@ export default function VendorPayments() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleAction = async (paymentId, action) => {
+    try {
+      await api.put(`/payments/${paymentId}/${action}`);
+      setPayments(prev => prev.map(p => p._id === paymentId ? { ...p, status: action === 'confirm' ? 'confirmed' : 'rejected' } : p));
+    } catch {
+      alert(`Error trying to ${action} payment`);
+    }
+  };
+
   if (loading) return <LoadingSpinner fullPage />;
 
   return (
@@ -52,9 +61,16 @@ export default function VendorPayments() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{formatAmount(payment.amount)}</div>
-                  <div style={{ fontSize: '0.75rem', color: payment.status === 'confirmed' ? 'var(--color-success)' : 'var(--color-warning)', textTransform: 'uppercase', fontWeight: 600, marginTop: '0.25rem' }}>
-                    {payment.status}
-                  </div>
+                  {payment.status === 'pending' ? (
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button onClick={() => handleAction(payment._id, 'reject')} style={{ background: 'transparent', color: 'var(--color-danger)', border: '1px solid var(--color-danger)', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
+                      <button onClick={() => handleAction(payment._id, 'confirm')} style={{ background: 'var(--color-primary)', color: '#000', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: 600 }}>Confirm</button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.75rem', color: payment.status === 'confirmed' ? 'var(--color-success)' : 'var(--color-danger)', textTransform: 'uppercase', fontWeight: 600, marginTop: '0.25rem' }}>
+                      {payment.status}
+                    </div>
+                  )}
                 </div>
               </div>
               

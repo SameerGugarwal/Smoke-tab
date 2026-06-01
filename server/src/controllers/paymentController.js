@@ -48,6 +48,29 @@ const confirmPayment = async (req, res) => {
   }
 };
 
+// Vendor rejects payment
+const rejectPayment = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const payment = await Payment.findByIdAndUpdate(
+      paymentId,
+      { status: 'rejected' },
+      { new: true }
+    );
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+
+    const tab = await Tab.findById(payment.tabId);
+    if (tab) {
+      req.io?.to(`tab:${tab._id}`).emit('tab:payment-rejected', { payment, tab });
+      req.io?.to(`user:${tab.buyerId}`).emit('tab:payment-rejected', { payment, tab });
+    }
+
+    res.json({ payment, tab });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get payments for a tab
 const getTabPayments = async (req, res) => {
   try {
@@ -98,4 +121,4 @@ const getBuyerPayments = async (req, res) => {
   }
 };
 
-module.exports = { recordPayment, confirmPayment, getTabPayments, getVendorPayments, getBuyerPayments };
+module.exports = { recordPayment, confirmPayment, rejectPayment, getTabPayments, getVendorPayments, getBuyerPayments };

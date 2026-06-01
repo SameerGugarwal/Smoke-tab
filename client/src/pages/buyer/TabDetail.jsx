@@ -15,6 +15,7 @@ export default function TabDetail() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPayment, setShowPayment] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState(null);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -40,11 +41,38 @@ export default function TabDetail() {
     }
   });
 
+  useSocket('tab:payment-received', ({ tab: updatedTab }) => {
+    if (updatedTab._id === tabId) {
+      setTab(updatedTab);
+      setPendingPayment(null);
+      showToastMsg('Vendor confirmed your payment! ✅');
+    }
+  });
+
+  useSocket('tab:payment-rejected', ({ tab: updatedTab }) => {
+    if (updatedTab._id === tabId) {
+      setTab(updatedTab);
+      setPendingPayment(null);
+      showToastMsg('Vendor rejected your payment ❌');
+    }
+  });
+
+  useSocket('tab:payment-initiated', ({ payment }) => {
+    if (payment.tabId === tabId) {
+      setPendingPayment(payment);
+    }
+  });
+
   const loadData = async () => {
     try {
-      const res = await api.get(`/tabs/${tabId}`);
-      setTab(res.data.tab);
-      setTransactions(res.data.transactions);
+      const [tabRes, payRes] = await Promise.all([
+        api.get(`/tabs/${tabId}`),
+        api.get(`/payments/tab/${tabId}`)
+      ]);
+      setTab(tabRes.data.tab);
+      setTransactions(tabRes.data.transactions);
+      const pending = payRes.data.payments.find(p => p.status === 'pending');
+      setPendingPayment(pending || null);
     } finally {
       setLoading(false);
     }
@@ -53,6 +81,21 @@ export default function TabDetail() {
   const showToastMsg = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 2500);
+  };
+
+  const handleLeaveTab = async () => {
+    if (tab.balanceDue > 0) {
+      alert("Cannot leave the vendor while you have unpaid dues.");
+      return;
+    }
+    if (window.confirm("Are you sure you want to disconnect from this vendor?")) {
+      try {
+        await api.delete(`/tabs/${tabId}/leave`);
+        navigate('/buyer');
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to leave vendor');
+      }
+    }
   };
 
   if (loading) return <LoadingSpinner fullPage />;
@@ -69,6 +112,13 @@ export default function TabDetail() {
         <div style={{ flex: 1 }}>
           <h3>{shop?.name}</h3>
         </div>
+        <button 
+          className="btn btn-ghost btn-sm" 
+          onClick={handleLeaveTab}
+          style={{ color: 'var(--color-danger)', border: '1px solid var(--color-danger)' }}
+        >
+          Leave
+        </button>
       </div>
 
       {/* Balance + pay button */}
@@ -80,13 +130,18 @@ export default function TabDetail() {
               {formatAmount(tab?.balanceDue)}
             </div>
           </div>
-          {tab?.balanceDue > 0 && shop?.upiId && (
+          {tab?.balanceDue > 0 && shop?.upiId && !pendingPayment && (
             <button
               className="btn btn-primary"
               onClick={() => setShowPayment(true)}
             >
               💸 Pay Now
             </button>
+          )}
+          {pendingPayment && (
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-warning)', fontWeight: 600 }}>
+              ⏳ Payment pending approval
+            </div>
           )}
         </div>
       </div>

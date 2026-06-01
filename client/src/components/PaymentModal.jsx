@@ -10,6 +10,7 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
   const [loading, setLoading] = useState(false);
   const [paid, setPaid] = useState(false);
   const [showUpiError, setShowUpiError] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   const amountRupees = (amount / 100).toFixed(2);
   const upiLink = shop?.upiId ? buildUpiLink(shop.upiId, amount, shop.name) : null;
@@ -27,7 +28,7 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
     }
   };
 
-  const handlePay = async () => {
+  const handleSpecificPay = async (app) => {
     if (!user?.upiId) {
       alert("Missing UPI ID! Please update your profile.");
       return;
@@ -36,6 +37,21 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
     if (!mobile || !upiLink) {
       // Desktop or no vendor upi -> just record pending
       recordPending();
+      return;
+    }
+
+    let intentUrl = upiLink; // generic upi://pay
+    if (app === 'gpay') {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      intentUrl = upiLink.replace('upi://pay', isIOS ? 'gpay://upi/pay' : 'tez://upi/pay');
+    }
+    if (app === 'phonepe') intentUrl = upiLink.replace('upi://pay', 'phonepe://pay');
+    if (app === 'paytm') intentUrl = upiLink.replace('upi://pay', 'paytmmp://pay');
+
+    if (app === 'generic') {
+      // Ban the generic link trigger on mobile to prevent iOS defaulting to WhatsApp.
+      // Instead, we show the QR code directly.
+      setShowQr(true);
       return;
     }
 
@@ -57,7 +73,7 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
     document.addEventListener("visibilitychange", handleVisibilityChange, { once: true });
     
     const a = document.createElement('a');
-    a.href = upiLink;
+    a.href = intentUrl;
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
@@ -121,24 +137,50 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
               </div>
             )}
 
-            {showUpiError && (
-              <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-danger)' }}>
-                <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem' }}>Could not launch a UPI app. Please scan the QR code instead.</p>
+            {(showUpiError || showQr) && (
+              <div className="card" style={{ marginBottom: '1rem', borderColor: showUpiError ? 'var(--color-danger)' : 'var(--color-primary)' }}>
+                <p style={{ color: showUpiError ? 'var(--color-danger)' : 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textAlign: 'center' }}>
+                  {showUpiError ? "Could not launch UPI app. Please scan the QR code:" : "Scan this QR code with any UPI app to pay:"}
+                </p>
                 <div style={{ textAlign: 'center', marginTop: '1rem' }}>
                   <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
                     <QRCodeSVG value={upiLink} size={150} />
                   </div>
                 </div>
+                {showQr && (
+                  <button 
+                    className="btn btn-primary btn-sm" 
+                    style={{ marginTop: '0.85rem', width: '100%' }}
+                    onClick={recordPending}
+                    disabled={loading}
+                  >
+                    {loading ? '...' : 'I have sent the payment'}
+                  </button>
+                )}
               </div>
             )}
 
-            <button
-              className="btn btn-primary btn-lg"
-              onClick={handlePay}
-              disabled={loading || amount <= 0}
-            >
-              {loading ? '...' : mobile ? `Pay ₹${amountRupees} via UPI` : 'Record Payment'}
-            </button>
+            {mobile && upiLink && shop?.upiId && amount > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-dim)' }}>Select your UPI App to Pay ₹{amountRupees}:</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button className="btn btn-primary" onClick={() => handleSpecificPay('gpay')} disabled={loading}>Google Pay</button>
+                  <button className="btn btn-primary" onClick={() => handleSpecificPay('phonepe')} disabled={loading}>PhonePe</button>
+                  <button className="btn btn-primary" onClick={() => handleSpecificPay('paytm')} disabled={loading}>Paytm</button>
+                  <button className="btn btn-ghost" style={{ border: '1px solid var(--color-border)' }} onClick={() => setShowQr(!showQr)} disabled={loading}>
+                    {showQr ? 'Hide QR Code' : 'Show QR Code'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="btn btn-primary btn-lg"
+                onClick={() => handleSpecificPay('generic')}
+                disabled={loading || amount <= 0}
+              >
+                {loading ? '...' : 'Record Payment'}
+              </button>
+            )}
             <button className="btn btn-ghost btn-lg" style={{ marginTop: '0.5rem' }} onClick={onClose}>
               Cancel
             </button>
