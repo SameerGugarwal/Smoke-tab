@@ -163,3 +163,11 @@ p  { line-height: 1.6; color: var(--color-text-muted); }
 .mt-2 { margin-top: 0.5rem; }
 .mt-4 { margin-top: 1rem; }
 .mb-4 { margin-bottom: 1rem; }
+
+/* ─── Price Hover Edit ───────────────────────────────── */
+.price-hover-edit:hover {
+  background: var(--color-surface2) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+  transform: translateY(-1px) scale(1.03);
+}

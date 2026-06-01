@@ -15,6 +15,8 @@ export default function InventoryManager() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '🚬', price: '', category: 'cigarette' });
   const [saving, setSaving] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingPrice, setEditingPrice] = useState('');
 
   useEffect(() => { loadItems(); }, []);
 
@@ -47,6 +49,26 @@ export default function InventoryManager() {
   const removeItem = async (id) => {
     await api.delete(`/shops/mine/inventory/${id}`);
     setItems((prev) => prev.filter((i) => i._id !== id));
+  };
+
+  const saveItemPrice = async (itemId) => {
+    if (!editingPrice) return;
+    const newPricePaise = Math.round(parseFloat(editingPrice) * 100);
+    if (isNaN(newPricePaise) || newPricePaise <= 0) {
+      alert("Please enter a valid price.");
+      return;
+    }
+
+    try {
+      const res = await api.put(`/shops/mine/inventory/${itemId}`, {
+        price: newPricePaise
+      });
+      setItems((prev) => prev.map((item) => item._id === itemId ? { ...item, price: res.data.item.price } : item));
+      setEditingItemId(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to update price');
+    }
   };
 
   const [syncing, setSyncing] = useState(false);
@@ -113,7 +135,66 @@ export default function InventoryManager() {
               <div style={{ fontWeight: 600 }}>{item.name}</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{item.category}</div>
             </div>
-            <div style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{formatAmount(item.price)}</div>
+            {editingItemId === item._id ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>₹</span>
+                <input 
+                  type="number" 
+                  value={editingPrice} 
+                  onChange={(e) => setEditingPrice(e.target.value)} 
+                  style={{ 
+                    width: '64px', 
+                    padding: '4px 8px', 
+                    background: 'var(--color-surface2)', 
+                    border: '1px solid var(--color-primary)', 
+                    borderRadius: '6px', 
+                    color: 'var(--color-text)',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    outline: 'none'
+                  }}
+                  step="0.5"
+                  min="0.5"
+                />
+                <button 
+                  onClick={() => saveItemPrice(item._id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', padding: '0 2px' }}
+                  title="Save price"
+                >
+                  ✅
+                </button>
+                <button 
+                  onClick={() => setEditingItemId(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', padding: '0 2px' }}
+                  title="Cancel"
+                >
+                  ❌
+                </button>
+              </div>
+            ) : (
+              <div 
+                onClick={() => {
+                  setEditingItemId(item._id);
+                  setEditingPrice((item.price / 100).toString());
+                }}
+                style={{ 
+                  color: 'var(--color-primary)', 
+                  fontWeight: 700, 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px dashed transparent',
+                  transition: 'all 0.2s'
+                }}
+                className="price-hover-edit"
+                title="Click to edit price"
+              >
+                {formatAmount(item.price)} <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>✏️</span>
+              </div>
+            )}
             <button
               onClick={() => removeItem(item._id)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1.1rem' }}
