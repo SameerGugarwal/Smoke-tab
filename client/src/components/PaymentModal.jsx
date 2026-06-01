@@ -11,15 +11,17 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
   const [paid, setPaid] = useState(false);
   const [showUpiError, setShowUpiError] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [showBetaAlert, setShowBetaAlert] = useState(false);
+  const [showUpiDropdown, setShowUpiDropdown] = useState(false);
 
   const amountRupees = (amount / 100).toFixed(2);
   const upiLink = shop?.upiId ? buildUpiLink(shop.upiId, amount, shop.name) : null;
   const mobile = isMobile();
 
-  const recordPending = async () => {
+  const recordPending = async (method = 'upi') => {
     setLoading(true);
     try {
-      await api.post('/payments', { tabId: tab._id, amount, method: 'upi' });
+      await api.post('/payments', { tabId: tab._id, amount, method });
       setPaid(true);
       setTimeout(() => { onClose(); onConfirmed?.(); }, 2000);
     } catch (err) {
@@ -126,7 +128,30 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-handle" />
-        <h2 style={{ marginBottom: '1.25rem' }}>Pay Dues</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <h2 style={{ margin: 0 }}>Pay Dues</h2>
+          <span style={{ fontSize: '0.75rem', background: 'rgba(255, 193, 7, 0.15)', color: 'var(--color-warning)', border: '1px solid var(--color-warning)', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>BETA v0.9.1</span>
+        </div>
+
+        {showBetaAlert && (
+          <div className="card" style={{ marginBottom: '1rem', borderColor: 'var(--color-warning)', background: 'rgba(255, 193, 7, 0.05)', padding: '1rem', borderRadius: '10px', position: 'relative' }}>
+            <button 
+              style={{ position: 'absolute', top: '8px', right: '12px', background: 'none', border: 'none', color: 'var(--color-warning)', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}
+              onClick={() => setShowBetaAlert(false)}
+            >
+              ✕
+            </button>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+              <div style={{ textAlign: 'left' }}>
+                <h4 style={{ color: 'var(--color-warning)', margin: '0 0 4px 0', fontSize: '0.9rem' }}>Beta Version Notice</h4>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: 0, lineHeight: '1.4' }}>
+                  Direct app redirection is currently disabled in the **Beta version**. Please use the **"Show QR Code"** option or select **"Pay in Cash"** below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {paid ? (
           <div className="empty-state">
@@ -218,15 +243,80 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
 
             {mobile && upiLink && shop?.upiId && amount > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-dim)' }}>Select your UPI App to Pay ₹{amountRupees}:</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <button className="btn btn-primary" onClick={() => handleSpecificPay('gpay')} disabled={loading}>Google Pay</button>
-                  <button className="btn btn-primary" onClick={() => handleSpecificPay('phonepe')} disabled={loading}>PhonePe</button>
-                  <button className="btn btn-primary" onClick={() => handleSpecificPay('paytm')} disabled={loading}>Paytm</button>
-                  <button className="btn btn-ghost" style={{ border: '1px solid var(--color-border)' }} onClick={() => setShowQr(!showQr)} disabled={loading}>
-                    {showQr ? 'Hide QR Code' : 'Show QR Code'}
+                <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-dim)' }}>Select Payment Method:</p>
+                
+                {/* 1. UPI App Dropdown Button */}
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ border: '1px solid var(--color-border)', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '10px 16px', background: 'var(--color-surface2)' }} 
+                    onClick={() => {
+                      setShowUpiDropdown(!showUpiDropdown);
+                      setShowQr(false); // Close QR when looking at UPI dropdown
+                    }}
+                    disabled={loading}
+                  >
+                    <span style={{ fontWeight: 600 }}>📱 Use UPI App</span>
+                    <span style={{ fontSize: '0.8rem', transform: showUpiDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
                   </button>
+                  
+                  {/* Dropdown Options */}
+                  {showUpiDropdown && (
+                    <div className="card" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '4px', padding: '0.5rem', background: 'var(--color-surface2)', boxShadow: '0 8px 16px rgba(0,0,0,0.2)', border: '1px solid var(--color-border)', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '8px 12px' }}
+                        onClick={() => { setShowBetaAlert(true); setShowUpiDropdown(false); }}
+                      >
+                        <span>Google Pay</span>
+                        <span style={{ opacity: 0.5, fontSize: '0.75rem' }}>(Beta)</span>
+                      </button>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '8px 12px' }}
+                        onClick={() => { setShowBetaAlert(true); setShowUpiDropdown(false); }}
+                      >
+                        <span>PhonePe</span>
+                        <span style={{ opacity: 0.5, fontSize: '0.75rem' }}>(Beta)</span>
+                      </button>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '8px 12px' }}
+                        onClick={() => { setShowBetaAlert(true); setShowUpiDropdown(false); }}
+                      >
+                        <span>Paytm</span>
+                        <span style={{ opacity: 0.5, fontSize: '0.75rem' }}>(Beta)</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {/* 2. Show QR Code Button */}
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ border: '1px solid var(--color-primary)', color: 'var(--color-primary)', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', background: showQr ? 'var(--color-surface3)' : 'transparent', fontWeight: 600 }} 
+                  onClick={() => {
+                    setShowQr(!showQr);
+                    setShowUpiDropdown(false); // Close UPI dropdown when showing QR
+                  }} 
+                  disabled={loading}
+                >
+                  {showQr ? '🙈 Hide QR Code' : '📸 Show QR Code (Recommended)'}
+                </button>
+
+                {/* 3. Pay in Cash Button */}
+                <button 
+                  className="btn btn-ghost" 
+                  style={{ border: '1px solid var(--color-success)', color: 'var(--color-success)', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 16px', fontWeight: 600 }} 
+                  onClick={() => {
+                    if (window.confirm(`Request cash payment of ₹${amountRupees} to the vendor?`)) {
+                      recordPending('cash');
+                    }
+                  }} 
+                  disabled={loading}
+                >
+                  💵 Pay in Cash
+                </button>
               </div>
             ) : (
               <button
