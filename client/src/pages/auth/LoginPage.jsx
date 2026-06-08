@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Flame, Store, User } from 'lucide-react';
+import { Flame, Store, User, Calendar } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, registerUser, user } = useAuth();
@@ -12,7 +12,6 @@ export default function LoginPage() {
   
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('');
-  const [dobType, setDobType] = useState('text');
   
   const [name, setName] = useState('');
   const [role, setRole] = useState('buyer');
@@ -137,23 +136,68 @@ export default function LoginPage() {
 
           <div className="input-group">
             <label className="input-label">Date of Birth</label>
-            <input
-              type={dobType}
-              className="input"
-              placeholder="Select Date of Birth"
-              value={dob}
-              onFocus={() => setDobType('date')}
-              onBlur={(e) => {
-                if (!e.target.value) setDobType('text');
-              }}
-              onChange={(e) => setDob(e.target.value)}
-              style={{
-                cursor: 'pointer',
-                colorScheme: 'dark',
-                height: '52px',
-                minHeight: '52px',
-              }}
-            />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="text"
+                className="input"
+                placeholder="YYYY-MM-DD"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                style={{ width: '100%', paddingRight: '48px', height: '52px' }}
+              />
+              <input
+                type="date"
+                id="hidden-dob-picker"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  opacity: 0,
+                  width: '24px',
+                  height: '24px',
+                  pointerEvents: 'none', // Block direct interaction so icon catches it
+                }}
+              />
+              <div 
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  color: 'var(--color-primary)',
+                  touchAction: 'manipulation' // disables 300ms tap delay
+                }}
+                onPointerDown={(e) => {
+                  e.preventDefault(); // Prevent focus shift
+                  const picker = document.getElementById('hidden-dob-picker');
+                  if (picker) {
+                    try {
+                      picker.showPicker();
+                    } catch (err) {
+                      picker.focus(); // Fallback for older browsers
+                    }
+                  }
+                }}
+                onClick={(e) => {
+                  // Fallback for desktop clicks
+                  const picker = document.getElementById('hidden-dob-picker');
+                  if (picker) {
+                    try {
+                      picker.showPicker();
+                    } catch (err) {
+                      picker.focus();
+                    }
+                  }
+                }}
+              >
+                <Calendar size={22} strokeWidth={2} />
+              </div>
+            </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: '-0.25rem' }}>
               You must be 18+ to use Tab.
             </p>
