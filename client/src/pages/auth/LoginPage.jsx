@@ -12,6 +12,7 @@ export default function LoginPage() {
   
   const [phone, setPhone] = useState('');
   const [dob, setDob] = useState('');
+  const [dobType, setDobType] = useState('text');
   
   const [name, setName] = useState('');
   const [role, setRole] = useState('buyer');
@@ -72,12 +73,14 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      width: '100%',
+      overflowY: 'auto',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem 1.5rem',
+      justifyContent: 'flex-start',
+      padding: '2.5rem 1.5rem',
       maxWidth: '400px',
       margin: '0 auto',
     }}>
@@ -135,13 +138,20 @@ export default function LoginPage() {
           <div className="input-group">
             <label className="input-label">Date of Birth</label>
             <input
-              type="date"
+              type={dobType}
               className="input"
+              placeholder="Select Date of Birth"
               value={dob}
+              onFocus={() => setDobType('date')}
+              onBlur={(e) => {
+                if (!e.target.value) setDobType('text');
+              }}
               onChange={(e) => setDob(e.target.value)}
               style={{
-                cursor: 'text', // Allows clicking on the input nicely
-                colorScheme: 'dark' // Helps the native date picker look good in dark mode
+                cursor: 'pointer',
+                colorScheme: 'dark',
+                height: '52px',
+                minHeight: '52px',
               }}
             />
             <p style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: '-0.25rem' }}>

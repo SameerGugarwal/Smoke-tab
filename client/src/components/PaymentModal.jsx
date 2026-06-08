@@ -87,13 +87,28 @@ export default function PaymentModal({ tab, shop, onClose, onConfirmed }) {
       return;
     }
     try {
+      // Convert base64 data URL to a binary Blob (highly compatible with mobile browser downloads)
+      const parts = qrImageDataUrl.split(',');
+      const mime = parts[0].match(/:(.*?);/)[1];
+      const bstr = atob(parts[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      const blob = new Blob([u8arr], { type: mime });
+      const blobURL = URL.createObjectURL(blob);
+
       // Synchronous click execution (will never be blocked by mobile browser popup blockers)
       const downloadLink = document.createElement('a');
-      downloadLink.href = qrImageDataUrl;
+      downloadLink.href = blobURL;
       downloadLink.download = `smoketab_pay_${shop?.name || 'shop'}.png`;
       document.body.appendChild(downloadLink);
       downloadLink.click();
       document.body.removeChild(downloadLink);
+
+      // Revoke the blob URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(blobURL), 100);
     } catch (err) {
       console.error('Failed to download QR code', err);
       alert('Automatic save failed. Please long-press (hold) the QR code image to save it.');
